@@ -3,7 +3,6 @@ package http
 import (
 	"github.com/gin-gonic/gin"
 	"golang-online-course/internal/usecase/auth"
-	authDto "golang-online-course/internal/usecase/auth/dto"
 	"golang-online-course/pkg/response"
 	"net/http"
 )
@@ -24,7 +23,7 @@ func (handler *AuthHandler) Route(route *gin.RouterGroup) {
 }
 
 func (handler *AuthHandler) Register(context *gin.Context) {
-	var registerInput authDto.RegisterRequestDto
+	var registerInput auth.RegisterRequest
 
 	errParsingJson := context.ShouldBindJSON(&registerInput)
 
@@ -46,7 +45,7 @@ func (handler *AuthHandler) Register(context *gin.Context) {
 }
 
 func (handler *AuthHandler) Login(context *gin.Context) {
-	var loginInput authDto.LoginRequestDto
+	var loginInput auth.LoginRequest
 
 	errParsingJson := context.ShouldBindJSON(&loginInput)
 

@@ -1,4 +1,4 @@
-package dto
+package auth
 
 type AuthResponseDto struct {
 	AccessToken  string `json:"access_token,omitempty"`

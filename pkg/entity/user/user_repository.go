@@ -26,6 +26,10 @@ func (repo *userRepository) FindByEmail(email string) *User {
 		panic("Cannot find User data by email. " + queryResult.Error.Error())
 	}
 
+	if errors.Is(queryResult.Error, gorm.ErrRecordNotFound) {
+		return nil
+	}
+
 	return &user
 }
 
