@@ -20,6 +20,7 @@ func (handler *AuthHandler) Route(route *gin.RouterGroup) {
 
 	apiRouter.POST("/auth/register", handler.Register)
 	apiRouter.POST("/auth/login", handler.Login)
+	apiRouter.POST("/auth/forgot-password", handler.SendForgotPasswordRequest)
 }
 
 func (handler *AuthHandler) Register(context *gin.Context) {
@@ -64,4 +65,26 @@ func (handler *AuthHandler) Login(context *gin.Context) {
 	}
 
 	context.JSON(http.StatusOK, loginResponse)
+}
+
+func (handler *AuthHandler) SendForgotPasswordRequest(context *gin.Context) {
+	var forgotPassInput auth.ForgotPasswordRequest
+
+	errParsingJson := context.ShouldBindJSON(&forgotPassInput)
+
+	if errParsingJson != nil {
+		context.JSON(http.StatusBadRequest, response.ErrorHttp(http.StatusBadRequest, errParsingJson.Error()))
+		context.Abort()
+		return
+	}
+
+	sendForgotPassResponse := handler.authUseCase.SendForgotPasswordRequest(forgotPassInput)
+
+	if sendForgotPassResponse.Error != nil {
+		context.JSON(http.StatusBadRequest, response.ErrorHttp(http.StatusBadRequest, sendForgotPassResponse.Error.Error()))
+		context.Abort()
+		return
+	}
+
+	context.JSON(http.StatusOK, "OK")
 }

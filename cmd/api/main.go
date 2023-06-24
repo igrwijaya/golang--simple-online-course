@@ -6,11 +6,12 @@ import (
 	"golang-online-course/internal/usecase/auth"
 	"golang-online-course/pkg/db"
 	"golang-online-course/pkg/entity"
+	"golang-online-course/pkg/entity/forgot_password"
 	"golang-online-course/pkg/entity/oauth_access_token"
 	"golang-online-course/pkg/entity/oauth_client"
 	"golang-online-course/pkg/entity/oauth_refresh_token"
 	"golang-online-course/pkg/entity/user"
-	"golang-online-course/pkg/service/mail_service"
+	"golang-online-course/pkg/service/email_service"
 )
 
 func main() {
@@ -23,10 +24,18 @@ func main() {
 	oauthClientRepo := oauth_client.NewRepository(appDb)
 	oauthRefreshTokenRepo := oauth_refresh_token.NewRepository(appDb)
 	userRepo := user.NewRepository(appDb)
+	forgotPasswordRepo := forgot_password.NewRepository(appDb)
 
-	mailService := mail_service.NewService()
+	mailService := email_service.NewService()
 
-	authUseCase := auth.NewUseCase(userRepo, oauthClientRepo, oauthAccessTokenRepo, oauthRefreshTokenRepo, mailService)
+	authUseCase := auth.NewUseCase(
+		userRepo,
+		oauthClientRepo,
+		oauthAccessTokenRepo,
+		oauthRefreshTokenRepo,
+		mailService,
+		forgotPasswordRepo)
+
 	authHandler := http.NewAuthHandler(authUseCase)
 
 	authHandler.Route(&route.RouterGroup)

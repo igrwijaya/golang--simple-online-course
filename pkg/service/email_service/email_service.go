@@ -1,4 +1,4 @@
-package mail_service
+package email_service
 
 import (
 	"bytes"
@@ -12,13 +12,30 @@ import (
 )
 
 type Service interface {
-	SendVerification(requestDto EmailVerificationDto) response.Basic
+	SendVerification(requestDto EmailVerificationRequest) response.Basic
+	SendForgotPassword(request ForgotPasswordRequest) response.Basic
 }
 
 type mailService struct {
 }
 
-func (service *mailService) SendVerification(requestDto EmailVerificationDto) response.Basic {
+func (service *mailService) SendForgotPassword(request ForgotPasswordRequest) response.Basic {
+	appDir, _ := os.Getwd()
+	templateFilePath := filepath.Join(appDir, "/web/template/forgot_password.html")
+
+	htmlContent, errParsingTemplate := parseTemplate(templateFilePath, request)
+
+	if errParsingTemplate != nil {
+		return response.Basic{
+			Code:  400,
+			Error: errParsingTemplate,
+		}
+	}
+
+	return sendEmail(request.Email, request.Subject, htmlContent)
+}
+
+func (service *mailService) SendVerification(requestDto EmailVerificationRequest) response.Basic {
 	appDir, _ := os.Getwd()
 	templateFilePath := filepath.Join(appDir, "/web/template/verification_email.html")
 

@@ -13,3 +13,7 @@ type RegisterRequest struct {
 	Password        string `json:"password" binding:"required"`
 	ConfirmPassword string `json:"confirm_password" binding:"required"`
 }
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email"`
+}

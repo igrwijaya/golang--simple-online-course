@@ -3,20 +3,22 @@ package auth
 import (
 	"errors"
 	"github.com/golang-jwt/jwt/v5"
+	"golang-online-course/pkg/entity/forgot_password"
 	"golang-online-course/pkg/entity/oauth_access_token"
 	"golang-online-course/pkg/entity/oauth_client"
 	"golang-online-course/pkg/entity/oauth_refresh_token"
 	"golang-online-course/pkg/entity/user"
 	"golang-online-course/pkg/response"
-	"golang-online-course/pkg/service/mail_service"
+	"golang-online-course/pkg/service/email_service"
 	"golang-online-course/pkg/utils"
 	"golang-online-course/pkg/utils/jwt_utils"
 	"time"
 )
 
 type UseCase interface {
-	Login(dto LoginRequest) (*AuthResponseDto, *response.Error)
+	Login(dto LoginRequest) (*LoginResponse, *response.Error)
 	Register(dto RegisterRequest) response.Basic
+	SendForgotPasswordRequest(request ForgotPasswordRequest) response.Basic
 }
 
 type authUseCase struct {
@@ -24,7 +26,8 @@ type authUseCase struct {
 	oauthClientRepository       oauth_client.Repository
 	oauthAccessTokenRepository  oauth_access_token.Repository
 	oauthRefreshTokenRepository oauth_refresh_token.Repository
-	mailService                 mail_service.Service
+	emailService                email_service.Service
+	forgotPasswordRepository    forgot_password.Repository
 }
 
 func NewUseCase(
@@ -32,18 +35,20 @@ func NewUseCase(
 	oauthClientRepository oauth_client.Repository,
 	oauthAccessTokenRepository oauth_access_token.Repository,
 	oauthRefreshTokenRepository oauth_refresh_token.Repository,
-	mailService mail_service.Service) UseCase {
+	mailService email_service.Service,
+	forgotPasswordRepository forgot_password.Repository) UseCase {
 
 	return &authUseCase{
 		userRepository:              userRepository,
 		oauthClientRepository:       oauthClientRepository,
 		oauthAccessTokenRepository:  oauthAccessTokenRepository,
 		oauthRefreshTokenRepository: oauthRefreshTokenRepository,
-		mailService:                 mailService,
+		emailService:                mailService,
+		forgotPasswordRepository:    forgotPasswordRepository,
 	}
 }
 
-func (useCase *authUseCase) Login(requestDto LoginRequest) (*AuthResponseDto, *response.Error) {
+func (useCase *authUseCase) Login(requestDto LoginRequest) (*LoginResponse, *response.Error) {
 	oauthClient := useCase.oauthClientRepository.FindClient(requestDto.ClientId, requestDto.ClientSecret)
 
 	if oauthClient == nil {
@@ -106,7 +111,7 @@ func (useCase *authUseCase) Login(requestDto LoginRequest) (*AuthResponseDto, *r
 
 	useCase.oauthRefreshTokenRepository.Create(oauthRefreshTokenEntity)
 
-	return &AuthResponseDto{
+	return &LoginResponse{
 		AccessToken:  oauthAccessTokenEntity.Token,
 		RefreshToken: oauthRefreshTokenEntity.Token,
 		Type:         "Bearer",
@@ -142,16 +147,49 @@ func (useCase *authUseCase) Register(requestDto RegisterRequest) response.Basic 
 		}
 	}
 
-	emailVerificationDto := mail_service.EmailVerificationDto{
+	emailVerificationDto := email_service.EmailVerificationRequest{
 		Subject:          "Online Course Registration Verification",
 		Email:            requestDto.Email,
 		VerificationCode: newUser.CodeVerified,
 	}
 
-	sendEmailResponse := useCase.mailService.SendVerification(emailVerificationDto)
+	sendEmailResponse := useCase.emailService.SendVerification(emailVerificationDto)
 
 	if sendEmailResponse.Error != nil {
 		return sendEmailResponse
+	}
+
+	return response.Success()
+}
+
+func (useCase *authUseCase) SendForgotPasswordRequest(request ForgotPasswordRequest) response.Basic {
+	existingUser := useCase.userRepository.FindByEmail(request.Email)
+
+	if existingUser == nil {
+		return response.Success()
+	}
+
+	expiredRequest := time.Now().Add(time.Hour)
+
+	forgotPasswordEntity := forgot_password.ForgotPassword{
+		UserId:    existingUser.Id,
+		Valid:     true,
+		Code:      utils.RandString(32),
+		ExpiredAt: &expiredRequest,
+	}
+
+	useCase.forgotPasswordRepository.Create(forgotPasswordEntity)
+
+	emailRequest := email_service.ForgotPasswordRequest{
+		Subject: "Forgot Password",
+		Email:   existingUser.Email,
+		Code:    forgotPasswordEntity.Code,
+	}
+
+	sendForgotPassResponse := useCase.emailService.SendForgotPassword(emailRequest)
+
+	if sendForgotPassResponse.Error != nil {
+		return sendForgotPassResponse
 	}
 
 	return response.Success()

@@ -9,7 +9,7 @@ import (
 type ForgotPassword struct {
 	Id        int
 	UserId    int
-	Valid     int8
+	Valid     bool
 	Code      string
 	ExpiredAt *time.Time
 	CreatedBy int
