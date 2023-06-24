@@ -1,7 +1,8 @@
-package utils
+package jwt_utils
 
 import (
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 	"os"
 )
 
@@ -25,4 +26,14 @@ func CreateJwtToken(claims AppClaims) string {
 	}
 
 	return tokenString
+}
+
+func HasValidPassword(hasPassword string, plainPassword string) bool {
+	errHashCompare := bcrypt.CompareHashAndPassword([]byte(hasPassword), []byte(plainPassword))
+
+	if errHashCompare != nil {
+		return false
+	}
+
+	return true
 }

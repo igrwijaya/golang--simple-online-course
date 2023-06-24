@@ -10,6 +10,7 @@ import (
 	"golang-online-course/pkg/entity/user"
 	"golang-online-course/pkg/response"
 	"golang-online-course/pkg/utils"
+	"golang-online-course/pkg/utils/jwt_utils"
 	"time"
 )
 
@@ -53,14 +54,23 @@ func (useCase *authUseCase) Login(requestDto dto.LoginRequestDto) (*dto.AuthResp
 
 	if existingUser == nil {
 		return nil, &response.Error{
-			Code:  404,
-			Error: errors.New("user not found"),
+			Code:  400,
+			Error: errors.New("email or password is invalid"),
+		}
+	}
+
+	hasValidPassword := jwt_utils.HasValidPassword(existingUser.Password, requestDto.Password)
+
+	if !hasValidPassword {
+		return nil, &response.Error{
+			Code:  400,
+			Error: errors.New("email or password is invalid"),
 		}
 	}
 
 	expirationTime := time.Now().Add(time.Hour)
 
-	userClaims := utils.AppClaims{
+	userClaims := jwt_utils.AppClaims{
 		Id:      existingUser.Id,
 		Name:    existingUser.Name,
 		Email:   existingUser.Email,
@@ -70,7 +80,7 @@ func (useCase *authUseCase) Login(requestDto dto.LoginRequestDto) (*dto.AuthResp
 		},
 	}
 
-	accessToken := utils.CreateJwtToken(userClaims)
+	accessToken := jwt_utils.CreateJwtToken(userClaims)
 
 	oauthAccessTokenEntity := oauth_access_token.OauthAccessToken{
 		OauthClientId: oauthClient.Id,
