@@ -1,6 +1,7 @@
 package user
 
 import (
+	"errors"
 	"golang-online-course/pkg/db"
 	"golang-online-course/pkg/response"
 	"gorm.io/gorm"
@@ -9,26 +10,23 @@ import (
 type Repository interface {
 	Migrate()
 	Create(user User) (*int, *response.Error)
-	FindByEmail(email string) (*User, *response.Error)
+	FindByEmail(email string) *User
 }
 
 type userRepository struct {
 	db *gorm.DB
 }
 
-func (repo *userRepository) FindByEmail(email string) (*User, *response.Error) {
+func (repo *userRepository) FindByEmail(email string) *User {
 	var user User
 
 	queryResult := repo.db.Where(&User{Email: email}).First(&user)
 
-	if queryResult.Error != nil {
-		return nil, &response.Error{
-			Code:  404,
-			Error: queryResult.Error,
-		}
+	if queryResult.Error != nil && !errors.Is(queryResult.Error, gorm.ErrRecordNotFound) {
+		panic("Cannot find User data by email. " + queryResult.Error.Error())
 	}
 
-	return &user, nil
+	return &user
 }
 
 func (repo *userRepository) Migrate() {

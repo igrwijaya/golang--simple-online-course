@@ -7,10 +7,21 @@ import (
 
 type Repository interface {
 	Migrate()
+	Create(entity OauthAccessToken) int
 }
 
 type oauthAccessTokenRepository struct {
 	db *gorm.DB
+}
+
+func (repo *oauthAccessTokenRepository) Create(entity OauthAccessToken) int {
+	createEntityResult := repo.db.Create(&entity)
+
+	if createEntityResult.Error != nil {
+		panic("Cannot create OAuth Access Token. " + createEntityResult.Error.Error())
+	}
+
+	return entity.Id
 }
 
 func (repo *oauthAccessTokenRepository) Migrate() {

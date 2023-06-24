@@ -2,6 +2,7 @@ package oauth_access_token
 
 import (
 	"golang-online-course/pkg/entity/oauth_client"
+	"golang-online-course/pkg/entity/user"
 	"gorm.io/gorm"
 	"time"
 )
@@ -20,4 +21,5 @@ type OauthAccessToken struct {
 	DeletedAt     *gorm.DeletedAt
 
 	OauthClient oauth_client.OauthClient
+	User        user.User
 }

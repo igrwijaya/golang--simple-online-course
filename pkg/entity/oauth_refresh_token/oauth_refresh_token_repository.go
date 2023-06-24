@@ -7,10 +7,21 @@ import (
 
 type Repository interface {
 	Migrate()
+	Create(entity OauthRefreshToken) int
 }
 
 type oAuthRefreshTokenRepository struct {
 	db *gorm.DB
+}
+
+func (repo *oAuthRefreshTokenRepository) Create(entity OauthRefreshToken) int {
+	createEntityResult := repo.db.Create(&entity)
+
+	if createEntityResult.Error != nil {
+		panic("Cannot create OAuth Refresh Token data. " + createEntityResult.Error.Error())
+	}
+
+	return entity.Id
 }
 
 func (repo *oAuthRefreshTokenRepository) Migrate() {

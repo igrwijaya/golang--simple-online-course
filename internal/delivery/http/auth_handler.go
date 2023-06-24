@@ -17,7 +17,10 @@ func NewAuthHandler(authUseCase auth.UseCase) *AuthHandler {
 }
 
 func (handler *AuthHandler) Route(route *gin.RouterGroup) {
-	route.POST("/api/v1/auth/register", handler.Register)
+	apiRouter := route.Group("/api/v1")
+
+	apiRouter.POST("/auth/register", handler.Register)
+	apiRouter.POST("/auth/login", handler.Login)
 }
 
 func (handler *AuthHandler) Register(context *gin.Context) {
@@ -40,4 +43,26 @@ func (handler *AuthHandler) Register(context *gin.Context) {
 	}
 
 	context.JSON(http.StatusOK, "OK")
+}
+
+func (handler *AuthHandler) Login(context *gin.Context) {
+	var loginInput authDto.LoginRequestDto
+
+	errParsingJson := context.ShouldBindJSON(&loginInput)
+
+	if errParsingJson != nil {
+		context.JSON(http.StatusBadRequest, response.ErrorHttp(http.StatusBadRequest, errParsingJson.Error()))
+		context.Abort()
+		return
+	}
+
+	loginResponse, errLogin := handler.authUseCase.Login(loginInput)
+
+	if errLogin != nil {
+		context.JSON(int(errLogin.Code), response.ErrorHttp(errLogin.Code, errLogin.Error.Error()))
+		context.Abort()
+		return
+	}
+
+	context.JSON(http.StatusOK, loginResponse)
 }

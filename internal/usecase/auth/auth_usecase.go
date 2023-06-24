@@ -2,40 +2,112 @@ package auth
 
 import (
 	"errors"
+	"github.com/golang-jwt/jwt/v5"
 	"golang-online-course/internal/usecase/auth/dto"
+	"golang-online-course/pkg/entity/oauth_access_token"
+	"golang-online-course/pkg/entity/oauth_client"
+	"golang-online-course/pkg/entity/oauth_refresh_token"
 	"golang-online-course/pkg/entity/user"
 	"golang-online-course/pkg/response"
 	"golang-online-course/pkg/utils"
-	"gorm.io/gorm"
+	"time"
 )
 
 type UseCase interface {
-	Login()
+	Login(dto dto.LoginRequestDto) (*dto.AuthResponseDto, *response.Error)
 	Register(dto dto.RegisterRequestDto) response.Basic
 }
 
 type authUseCase struct {
-	userRepository user.Repository
+	userRepository              user.Repository
+	oauthClientRepository       oauth_client.Repository
+	oauthAccessTokenRepository  oauth_access_token.Repository
+	oauthRefreshTokenRepository oauth_refresh_token.Repository
 }
 
-func (useCase *authUseCase) Login() {
-	//TODO implement me
-	panic("implement me")
+func NewUseCase(
+	userRepository user.Repository,
+	oauthClientRepository oauth_client.Repository,
+	oauthAccessTokenRepository oauth_access_token.Repository,
+	oauthRefreshTokenRepository oauth_refresh_token.Repository) UseCase {
+
+	return &authUseCase{
+		userRepository:              userRepository,
+		oauthClientRepository:       oauthClientRepository,
+		oauthAccessTokenRepository:  oauthAccessTokenRepository,
+		oauthRefreshTokenRepository: oauthRefreshTokenRepository,
+	}
 }
 
-func (useCase *authUseCase) Register(requestDto dto.RegisterRequestDto) response.Basic {
-	existingUser, getUserError := useCase.userRepository.FindByEmail(requestDto.Email)
+func (useCase *authUseCase) Login(requestDto dto.LoginRequestDto) (*dto.AuthResponseDto, *response.Error) {
+	oauthClient := useCase.oauthClientRepository.FindClient(requestDto.ClientId, requestDto.ClientSecret)
 
-	if getUserError != nil && !errors.Is(getUserError.Error, gorm.ErrRecordNotFound) {
-		return response.Basic{
-			Code:  getUserError.Code,
-			Error: getUserError.Error,
+	if oauthClient == nil {
+		return nil, &response.Error{
+			Code:  404,
+			Error: errors.New("oauth client not found"),
 		}
 	}
 
+	existingUser := useCase.userRepository.FindByEmail(requestDto.Email)
+
+	if existingUser == nil {
+		return nil, &response.Error{
+			Code:  404,
+			Error: errors.New("user not found"),
+		}
+	}
+
+	expirationTime := time.Now().Add(time.Hour)
+
+	userClaims := utils.AppClaims{
+		Id:      existingUser.Id,
+		Name:    existingUser.Name,
+		Email:   existingUser.Email,
+		IsAdmin: false,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+		},
+	}
+
+	accessToken := utils.CreateJwtToken(userClaims)
+
+	oauthAccessTokenEntity := oauth_access_token.OauthAccessToken{
+		OauthClientId: oauthClient.Id,
+		UserId:        existingUser.Id,
+		Token:         accessToken,
+		Scope:         "*",
+		ExpiredAt:     &expirationTime,
+	}
+
+	createOauthTokenResult := useCase.oauthAccessTokenRepository.Create(oauthAccessTokenEntity)
+
+	refreshTokenExpiredAt := expirationTime.Add(time.Minute * 5)
+
+	oauthRefreshTokenEntity := oauth_refresh_token.OauthRefreshToken{
+		OauthAccessTokenId: createOauthTokenResult,
+		UserId:             existingUser.Id,
+		Token:              utils.RandString(128),
+		ExpiredAt:          &refreshTokenExpiredAt,
+	}
+
+	useCase.oauthRefreshTokenRepository.Create(oauthRefreshTokenEntity)
+
+	return &dto.AuthResponseDto{
+		AccessToken:  oauthAccessTokenEntity.Token,
+		RefreshToken: oauthRefreshTokenEntity.Token,
+		Type:         "Bearer",
+		ExpiredAt:    expirationTime.Format(time.RFC3339),
+		Scope:        "*",
+	}, nil
+}
+
+func (useCase *authUseCase) Register(requestDto dto.RegisterRequestDto) response.Basic {
+	existingUser := useCase.userRepository.FindByEmail(requestDto.Email)
+
 	if existingUser != nil {
 		return response.Basic{
-			Code:  403,
+			Code:  400,
 			Error: errors.New("email already registered"),
 		}
 	}
@@ -58,10 +130,4 @@ func (useCase *authUseCase) Register(requestDto dto.RegisterRequestDto) response
 	}
 
 	return response.Success()
-}
-
-func NewUseCase(userRepository user.Repository) UseCase {
-	return &authUseCase{
-		userRepository: userRepository,
-	}
 }
