@@ -13,10 +13,27 @@ type Repository interface {
 	Create(user User) (*uint, *response.Error)
 	FindByEmail(email string) *User
 	ChangePassword(id uint, hashPassword string)
+	Find(id uint) *User
 }
 
 type userRepository struct {
 	db *gorm.DB
+}
+
+func (repo *userRepository) Find(id uint) *User {
+	var user User
+
+	findQueryResult := repo.db.First(&user, id)
+
+	if findQueryResult.Error == nil {
+		return &user
+	}
+
+	if errors.Is(findQueryResult.Error, gorm.ErrRecordNotFound) {
+		return nil
+	}
+
+	panic("Cannot find User by Id. " + findQueryResult.Error.Error())
 }
 
 func (repo *userRepository) ChangePassword(id uint, hashPassword string) {

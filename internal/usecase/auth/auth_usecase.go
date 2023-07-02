@@ -20,6 +20,7 @@ type UseCase interface {
 	Register(dto RegisterRequest) response.Basic
 	SendForgotPasswordRequest(request ForgotPasswordRequest) response.Basic
 	ResetPassword(request ResetPasswordRequest) response.Basic
+	Refresh(request RefreshAuthTokenRequest) (*LoginResponse, *response.Error)
 }
 
 type authUseCase struct {
@@ -112,13 +113,9 @@ func (useCase *authUseCase) Login(requestDto LoginRequest) (*LoginResponse, *res
 
 	useCase.oauthRefreshTokenRepository.Create(oauthRefreshTokenEntity)
 
-	return &LoginResponse{
-		AccessToken:  oauthAccessTokenEntity.Token,
-		RefreshToken: oauthRefreshTokenEntity.Token,
-		Type:         "Bearer",
-		ExpiredAt:    expirationTime.Format(time.RFC3339),
-		Scope:        "*",
-	}, nil
+	authTokenResponse := useCase.generateAuthToken(existingUser)
+
+	return &authTokenResponse, nil
 }
 
 func (useCase *authUseCase) Register(requestDto RegisterRequest) response.Basic {
@@ -237,4 +234,84 @@ func (useCase *authUseCase) ResetPassword(request ResetPasswordRequest) response
 	useCase.forgotPasswordRepository.Delete(forgotPassEntity.Id)
 
 	return response.Success()
+}
+
+func (useCase *authUseCase) Refresh(request RefreshAuthTokenRequest) (*LoginResponse, *response.Error) {
+	oauthRefreshTokenEntity := useCase.oauthRefreshTokenRepository.FindByToken(request.RefreshToken)
+
+	if oauthRefreshTokenEntity == nil {
+		return nil, &response.Error{
+			Code:  400,
+			Error: errors.New("refresh token is invalid"),
+		}
+	}
+
+	if oauthRefreshTokenEntity.ExpiredAt.Before(time.Now().UTC()) {
+		return nil, &response.Error{
+			Code:  400,
+			Error: errors.New("refresh token is expired"),
+		}
+	}
+
+	userEntity := useCase.userRepository.Find(oauthRefreshTokenEntity.UserId)
+
+	if userEntity == nil {
+		return nil, &response.Error{
+			Code:  400,
+			Error: errors.New("user not found"),
+		}
+	}
+
+	authTokenResponse := useCase.generateAuthToken(userEntity)
+
+	return &authTokenResponse, nil
+}
+
+func (useCase *authUseCase) generateAuthToken(user *user.User) LoginResponse {
+	if user == nil {
+		panic("user not found")
+	}
+
+	expirationTime := time.Now().Add(time.Hour)
+
+	userClaims := jwt_utils.AppClaims{
+		Id:      user.Id,
+		Name:    user.Name,
+		Email:   user.Email,
+		IsAdmin: false,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+		},
+	}
+
+	accessToken := jwt_utils.CreateJwtToken(userClaims)
+
+	oauthAccessTokenEntity := oauth_access_token.OauthAccessToken{
+		OauthClientId: user.Id,
+		UserId:        user.Id,
+		Token:         accessToken,
+		Scope:         "*",
+		ExpiredAt:     &expirationTime,
+	}
+
+	createOauthTokenResult := useCase.oauthAccessTokenRepository.Create(oauthAccessTokenEntity)
+
+	refreshTokenExpiredAt := expirationTime.Add(time.Minute * 5)
+
+	oauthRefreshTokenEntity := oauth_refresh_token.OauthRefreshToken{
+		OauthAccessTokenId: createOauthTokenResult,
+		UserId:             user.Id,
+		Token:              utils.RandString(128),
+		ExpiredAt:          &refreshTokenExpiredAt,
+	}
+
+	useCase.oauthRefreshTokenRepository.Create(oauthRefreshTokenEntity)
+
+	return LoginResponse{
+		AccessToken:  oauthAccessTokenEntity.Token,
+		RefreshToken: oauthRefreshTokenEntity.Token,
+		Type:         "Bearer",
+		ExpiredAt:    expirationTime.Format(time.RFC3339),
+		Scope:        "*",
+	}
 }

@@ -16,6 +16,14 @@ type oauthAccessTokenRepository struct {
 }
 
 func (repo *oauthAccessTokenRepository) Create(entity OauthAccessToken) uint {
+
+	var existingAccessToken OauthAccessToken
+	findQueryResult := repo.db.Where(&OauthAccessToken{UserId: entity.UserId}).First(&existingAccessToken)
+
+	if findQueryResult.Error == nil {
+		repo.db.Delete(&existingAccessToken)
+	}
+
 	createEntityResult := repo.db.Create(&entity)
 
 	if createEntityResult.Error != nil {

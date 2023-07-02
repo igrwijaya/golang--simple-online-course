@@ -22,6 +22,7 @@ func (handler *AuthHandler) Route(route *gin.RouterGroup) {
 	apiRouter.POST("/auth/login", handler.Login)
 	apiRouter.POST("/auth/forgot-password", handler.SendForgotPasswordRequest)
 	apiRouter.POST("/auth/reset-password", handler.ResetPassword)
+	apiRouter.POST("/auth/refresh", handler.RefreshToken)
 }
 
 func (handler *AuthHandler) Register(context *gin.Context) {
@@ -110,4 +111,26 @@ func (handler *AuthHandler) ResetPassword(context *gin.Context) {
 	}
 
 	context.JSON(http.StatusOK, "OK")
+}
+
+func (handler *AuthHandler) RefreshToken(context *gin.Context) {
+	var request auth.RefreshAuthTokenRequest
+
+	errParsingJson := context.ShouldBindJSON(&request)
+
+	if errParsingJson != nil {
+		context.JSON(http.StatusBadRequest, response.ErrorHttp(http.StatusBadRequest, errParsingJson.Error()))
+		context.Abort()
+		return
+	}
+
+	authToken, errResponse := handler.authUseCase.Refresh(request)
+
+	if errResponse != nil || authToken == nil {
+		context.JSON(http.StatusBadRequest, response.ErrorHttp(http.StatusBadRequest, errResponse.Error.Error()))
+		context.Abort()
+		return
+	}
+
+	context.JSON(http.StatusOK, authToken)
 }
