@@ -1,20 +1,15 @@
 package user
 
 import (
-	"gorm.io/gorm"
+	"golang-online-course/pkg/entity/core_entity"
 	"time"
 )
 
 type User struct {
-	Id              int
+	core_entity.CoreEntity
 	Name            string
 	Email           string
 	Password        string
 	CodeVerified    string
 	EmailVerifiedAt *time.Time
-	CreatedBy       int
-	CreatedAt       *time.Time
-	UpdatedBy       int
-	UpdatedAt       *time.Time
-	DeletedAt       *gorm.DeletedAt
 }

@@ -9,12 +9,27 @@ import (
 
 type Repository interface {
 	Migrate()
-	Create(user User) (*int, *response.Error)
+	Create(user User) (*uint, *response.Error)
 	FindByEmail(email string) *User
+	ChangePassword(id uint, hashPassword string)
 }
 
 type userRepository struct {
 	db *gorm.DB
+}
+
+func (repo *userRepository) ChangePassword(id uint, hashPassword string) {
+	var user User
+
+	queryResult := repo.db.First(&user, id)
+
+	if queryResult.Error != nil {
+		panic("Cannot find User data by id. " + queryResult.Error.Error())
+	}
+
+	user.Password = hashPassword
+
+	repo.db.Save(&user)
 }
 
 func (repo *userRepository) FindByEmail(email string) *User {
@@ -41,7 +56,7 @@ func (repo *userRepository) Migrate() {
 	}
 }
 
-func (repo *userRepository) Create(user User) (*int, *response.Error) {
+func (repo *userRepository) Create(user User) (*uint, *response.Error) {
 	createUserResult := repo.db.Create(&user)
 
 	if createUserResult.Error != nil {

@@ -7,14 +7,14 @@ import (
 
 type Repository interface {
 	Migrate()
-	Create(entity OauthRefreshToken) int
+	Create(entity OauthRefreshToken) uint
 }
 
 type oAuthRefreshTokenRepository struct {
 	db *gorm.DB
 }
 
-func (repo *oAuthRefreshTokenRepository) Create(entity OauthRefreshToken) int {
+func (repo *oAuthRefreshTokenRepository) Create(entity OauthRefreshToken) uint {
 	createEntityResult := repo.db.Create(&entity)
 
 	if createEntityResult.Error != nil {

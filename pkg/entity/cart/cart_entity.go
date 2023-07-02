@@ -1,24 +1,18 @@
 package cart
 
 import (
+	"golang-online-course/pkg/entity/core_entity"
 	"golang-online-course/pkg/entity/product"
 	"golang-online-course/pkg/entity/user"
-	"gorm.io/gorm"
-	"time"
 )
 
 type Cart struct {
-	Id        int
+	core_entity.CoreEntity
 	UserId    int
 	ProductId int
 	Quantity  int
 	IsChecked bool
-	CreatedBy int
-	CreatedAt *time.Time
-	UpdatedBy int
-	UpdatedAt *time.Time
-	DeletedAt *gorm.DeletedAt
 
-	User    user.User
-	Product product.Product
+	User    user.User       `gorm:"foreignKey:UserId;references:Id"`
+	Product product.Product `gorm:"foreignKey:ProductId;references:Id"`
 }

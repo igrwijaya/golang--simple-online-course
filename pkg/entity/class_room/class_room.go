@@ -1,22 +1,16 @@
 package class_room
 
 import (
+	"golang-online-course/pkg/entity/core_entity"
 	"golang-online-course/pkg/entity/product"
 	"golang-online-course/pkg/entity/user"
-	"gorm.io/gorm"
-	"time"
 )
 
 type ClassRoom struct {
-	Id        int
-	UserId    int
-	ProductId int
-	CreatedBy int
-	CreatedAt *time.Time
-	UpdatedBy int
-	UpdatedAt *time.Time
-	DeletedAt *gorm.DeletedAt
+	core_entity.CoreEntity
+	UserId    uint
+	ProductId uint
 
-	User    user.User
-	Product product.Product
+	User    user.User       `gorm:"foreignKey:UserId;references:Id"`
+	Product product.Product `gorm:"foreignKey:ProductId;references:Id"`
 }

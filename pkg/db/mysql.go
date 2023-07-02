@@ -5,6 +5,7 @@ import (
 	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 	"os"
 )
 
@@ -23,7 +24,11 @@ func MySql() *gorm.DB {
 
 	hostConnection := userName + ":" + password + "@tcp(" + host + ":" + port + ")/" + dbName + "?charset=utf8&parseTime=true&loc=UTC"
 
-	db, openDbError := gorm.Open(mysql.Open(hostConnection), &gorm.Config{})
+	db, openDbError := gorm.Open(mysql.Open(hostConnection), &gorm.Config{
+		NamingStrategy: schema.NamingStrategy{
+			NoLowerCase: true,
+		},
+	})
 
 	if openDbError != nil {
 		panic("Can't connect to database")

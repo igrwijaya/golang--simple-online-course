@@ -1,22 +1,16 @@
 package forgot_password
 
 import (
+	"golang-online-course/pkg/entity/core_entity"
 	"golang-online-course/pkg/entity/user"
-	"gorm.io/gorm"
 	"time"
 )
 
 type ForgotPassword struct {
-	Id        int
-	UserId    int
-	Valid     bool
+	core_entity.CoreEntity
+	UserId    uint
 	Code      string
 	ExpiredAt *time.Time
-	CreatedBy int
-	CreatedAt *time.Time
-	UpdatedBy int
-	UpdatedAt *time.Time
-	DeletedAt *gorm.DeletedAt
 
-	User user.User
+	User user.User `gorm:"foreignKey:UserId;references:Id"`
 }

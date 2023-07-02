@@ -1,25 +1,19 @@
 package product
 
 import (
+	"golang-online-course/pkg/entity/core_entity"
 	"golang-online-course/pkg/entity/product_category"
-	"gorm.io/gorm"
-	"time"
 )
 
 type Product struct {
-	Id                int
-	ProductCategoryId int
+	core_entity.CoreEntity
+	ProductCategoryId uint
 	Title             string
 	Image             string
 	Video             string
 	Description       string
 	IsHighlighted     string
 	Price             int
-	CreatedBy         int
-	CreatedAt         *time.Time
-	UpdatedBy         int
-	UpdatedAt         *time.Time
-	DeletedAt         *gorm.DeletedAt
 
-	ProductCategory product_category.ProductCategory
+	ProductCategory product_category.ProductCategory `gorm:"foreignKey:ProductCategoryId;references:Id"`
 }

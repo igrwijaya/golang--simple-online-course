@@ -17,3 +17,9 @@ type RegisterRequest struct {
 type ForgotPasswordRequest struct {
 	Email string `json:"email"`
 }
+
+type ResetPasswordRequest struct {
+	Code               string `json:"code" binding:"required"`
+	NewPassword        string `json:"new_password" binding:"required"`
+	ConfirmNewPassword string `json:"confirm_new_password" binding:"required"`
+}

@@ -1,12 +1,12 @@
 package discount
 
 import (
-	"gorm.io/gorm"
+	"golang-online-course/pkg/entity/core_entity"
 	"time"
 )
 
 type Discount struct {
-	Id                int
+	core_entity.CoreEntity
 	Name              string
 	Code              string
 	Quantity          int
@@ -15,9 +15,4 @@ type Discount struct {
 	Value             int
 	StartDate         *time.Time
 	EndDate           *time.Time
-	CreatedBy         int
-	CreatedAt         *time.Time
-	UpdatedBy         int
-	UpdatedAt         *time.Time
-	DeletedAt         *gorm.DeletedAt
 }

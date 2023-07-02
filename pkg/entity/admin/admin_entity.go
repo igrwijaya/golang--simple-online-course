@@ -1,18 +1,12 @@
 package admin
 
 import (
-	"gorm.io/gorm"
-	"time"
+	"golang-online-course/pkg/entity/core_entity"
 )
 
 type Admin struct {
-	Id        int
-	Name      string
-	Email     string
-	Password  string
-	CreatedBy int
-	CreatedAt *time.Time
-	UpdatedBy int
-	UpdatedAt *time.Time
-	DeletedAt *gorm.DeletedAt
+	core_entity.CoreEntity
+	Name     string
+	Email    string
+	Password string
 }

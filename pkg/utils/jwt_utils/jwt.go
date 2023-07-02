@@ -7,7 +7,7 @@ import (
 )
 
 type AppClaims struct {
-	Id      int
+	Id      uint
 	Name    string
 	Email   string
 	IsAdmin bool

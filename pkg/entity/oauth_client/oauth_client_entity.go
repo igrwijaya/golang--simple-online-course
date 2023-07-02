@@ -1,21 +1,15 @@
 package oauth_client
 
 import (
-	"gorm.io/gorm"
-	"time"
+	"golang-online-course/pkg/entity/core_entity"
 )
 
 type OauthClient struct {
-	Id           int
+	core_entity.CoreEntity
 	ClientId     string
 	ClientSecret string
 	Name         string
 	Redirect     string
 	Description  string
 	Scope        string
-	CreatedBy    int
-	CreatedAt    *time.Time
-	UpdatedBy    int
-	UpdatedAt    *time.Time
-	DeletedAt    *gorm.DeletedAt
 }

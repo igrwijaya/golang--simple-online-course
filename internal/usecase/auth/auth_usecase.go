@@ -19,6 +19,7 @@ type UseCase interface {
 	Login(dto LoginRequest) (*LoginResponse, *response.Error)
 	Register(dto RegisterRequest) response.Basic
 	SendForgotPasswordRequest(request ForgotPasswordRequest) response.Basic
+	ResetPassword(request ResetPasswordRequest) response.Basic
 }
 
 type authUseCase struct {
@@ -121,6 +122,14 @@ func (useCase *authUseCase) Login(requestDto LoginRequest) (*LoginResponse, *res
 }
 
 func (useCase *authUseCase) Register(requestDto RegisterRequest) response.Basic {
+
+	if requestDto.Password != requestDto.ConfirmPassword {
+		return response.Basic{
+			Code:  400,
+			Error: errors.New("password confirmation doesn't match"),
+		}
+	}
+
 	existingUser := useCase.userRepository.FindByEmail(requestDto.Email)
 
 	if existingUser != nil {
@@ -173,7 +182,6 @@ func (useCase *authUseCase) SendForgotPasswordRequest(request ForgotPasswordRequ
 
 	forgotPasswordEntity := forgot_password.ForgotPassword{
 		UserId:    existingUser.Id,
-		Valid:     true,
 		Code:      utils.RandString(32),
 		ExpiredAt: &expiredRequest,
 	}
@@ -191,6 +199,42 @@ func (useCase *authUseCase) SendForgotPasswordRequest(request ForgotPasswordRequ
 	if sendForgotPassResponse.Error != nil {
 		return sendForgotPassResponse
 	}
+
+	return response.Success()
+}
+
+func (useCase *authUseCase) ResetPassword(request ResetPasswordRequest) response.Basic {
+	if request.NewPassword != request.ConfirmNewPassword {
+		return response.Basic{
+			Code:  400,
+			Error: errors.New("password confirmation doesn't match"),
+		}
+	}
+
+	forgotPassEntity := useCase.forgotPasswordRepository.FindByCode(request.Code)
+
+	if forgotPassEntity == nil {
+		return response.Basic{
+			Code:  400,
+			Error: errors.New("invalid forgot password verification code"),
+		}
+	}
+
+	if forgotPassEntity.ExpiredAt != nil {
+		expiredAt := forgotPassEntity.ExpiredAt.UTC()
+
+		if time.Now().UTC().After(expiredAt) {
+			return response.Basic{
+				Code:  400,
+				Error: errors.New("invalid forgot password verification code"),
+			}
+		}
+	}
+
+	hashPassword := utils.EncryptPassword(request.NewPassword)
+
+	useCase.userRepository.ChangePassword(forgotPassEntity.UserId, hashPassword)
+	useCase.forgotPasswordRepository.Delete(forgotPassEntity.Id)
 
 	return response.Success()
 }
