@@ -3,11 +3,12 @@ package oauth_client
 import (
 	"errors"
 	"golang-online-course/pkg/db"
+	"golang-online-course/pkg/entity/core_entity"
 	"gorm.io/gorm"
 )
 
 type Repository interface {
-	Migrate()
+	core_entity.BaseRepository
 	FindClient(clientId string, clientSecret string) *OauthClient
 }
 

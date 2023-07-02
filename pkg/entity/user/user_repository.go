@@ -3,12 +3,13 @@ package user
 import (
 	"errors"
 	"golang-online-course/pkg/db"
+	"golang-online-course/pkg/entity/core_entity"
 	"golang-online-course/pkg/response"
 	"gorm.io/gorm"
 )
 
 type Repository interface {
-	Migrate()
+	core_entity.BaseRepository
 	Create(user User) (*uint, *response.Error)
 	FindByEmail(email string) *User
 	ChangePassword(id uint, hashPassword string)

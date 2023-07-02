@@ -2,11 +2,12 @@ package oauth_access_token
 
 import (
 	"golang-online-course/pkg/db"
+	"golang-online-course/pkg/entity/core_entity"
 	"gorm.io/gorm"
 )
 
 type Repository interface {
-	Migrate()
+	core_entity.BaseRepository
 	Create(entity OauthAccessToken) uint
 }
 
