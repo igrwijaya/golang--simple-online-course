@@ -31,7 +31,7 @@ func (handler *AuthHandler) Register(context *gin.Context) {
 	errParsingJson := context.ShouldBindJSON(&registerInput)
 
 	if errParsingJson != nil {
-		context.JSON(http.StatusBadRequest, response.ErrorHttp(http.StatusBadRequest, errParsingJson.Error()))
+		context.JSON(http.StatusBadRequest, response.BadRequest(errParsingJson.Error()))
 		context.Abort()
 		return
 	}
@@ -39,7 +39,7 @@ func (handler *AuthHandler) Register(context *gin.Context) {
 	registerResponse := handler.authUseCase.Register(registerInput)
 
 	if registerResponse.Error != nil {
-		context.JSON(int(registerResponse.Code), response.ErrorHttp(registerResponse.Code, registerResponse.Error.Error()))
+		context.JSON(int(registerResponse.Code), response.BadRequest(registerResponse.Error.Error()))
 		context.Abort()
 		return
 	}
@@ -53,7 +53,7 @@ func (handler *AuthHandler) Login(context *gin.Context) {
 	errParsingJson := context.ShouldBindJSON(&loginInput)
 
 	if errParsingJson != nil {
-		context.JSON(http.StatusBadRequest, response.ErrorHttp(http.StatusBadRequest, errParsingJson.Error()))
+		context.JSON(http.StatusBadRequest, response.BadRequest(errParsingJson.Error()))
 		context.Abort()
 		return
 	}
@@ -61,7 +61,7 @@ func (handler *AuthHandler) Login(context *gin.Context) {
 	loginResponse, errLogin := handler.authUseCase.Login(loginInput)
 
 	if errLogin != nil {
-		context.JSON(int(errLogin.Code), response.ErrorHttp(errLogin.Code, errLogin.Error.Error()))
+		context.JSON(int(errLogin.Code), response.BadRequest(errLogin.Error.Error()))
 		context.Abort()
 		return
 	}
@@ -75,7 +75,7 @@ func (handler *AuthHandler) SendForgotPasswordRequest(context *gin.Context) {
 	errParsingJson := context.ShouldBindJSON(&forgotPassInput)
 
 	if errParsingJson != nil {
-		context.JSON(http.StatusBadRequest, response.ErrorHttp(http.StatusBadRequest, errParsingJson.Error()))
+		context.JSON(http.StatusBadRequest, response.BadRequest(errParsingJson.Error()))
 		context.Abort()
 		return
 	}
@@ -83,7 +83,7 @@ func (handler *AuthHandler) SendForgotPasswordRequest(context *gin.Context) {
 	sendForgotPassResponse := handler.authUseCase.SendForgotPasswordRequest(forgotPassInput)
 
 	if sendForgotPassResponse.Error != nil {
-		context.JSON(http.StatusBadRequest, response.ErrorHttp(http.StatusBadRequest, sendForgotPassResponse.Error.Error()))
+		context.JSON(http.StatusBadRequest, response.BadRequest(sendForgotPassResponse.Error.Error()))
 		context.Abort()
 		return
 	}
@@ -97,7 +97,7 @@ func (handler *AuthHandler) ResetPassword(context *gin.Context) {
 	errPassingJson := context.ShouldBindJSON(&resetPassInput)
 
 	if errPassingJson != nil {
-		context.JSON(http.StatusBadRequest, response.ErrorHttp(http.StatusBadRequest, errPassingJson.Error()))
+		context.JSON(http.StatusBadRequest, response.BadRequest(errPassingJson.Error()))
 		context.Abort()
 		return
 	}
@@ -105,7 +105,7 @@ func (handler *AuthHandler) ResetPassword(context *gin.Context) {
 	resetPassResponse := handler.authUseCase.ResetPassword(resetPassInput)
 
 	if resetPassResponse.Error != nil {
-		context.JSON(http.StatusBadRequest, response.ErrorHttp(http.StatusBadRequest, resetPassResponse.Error.Error()))
+		context.JSON(http.StatusBadRequest, response.BadRequest(resetPassResponse.Error.Error()))
 		context.Abort()
 		return
 	}
@@ -119,7 +119,7 @@ func (handler *AuthHandler) RefreshToken(context *gin.Context) {
 	errParsingJson := context.ShouldBindJSON(&request)
 
 	if errParsingJson != nil {
-		context.JSON(http.StatusBadRequest, response.ErrorHttp(http.StatusBadRequest, errParsingJson.Error()))
+		context.JSON(http.StatusBadRequest, response.BadRequest(errParsingJson.Error()))
 		context.Abort()
 		return
 	}
@@ -127,7 +127,7 @@ func (handler *AuthHandler) RefreshToken(context *gin.Context) {
 	authToken, errResponse := handler.authUseCase.Refresh(request)
 
 	if errResponse != nil || authToken == nil {
-		context.JSON(http.StatusBadRequest, response.ErrorHttp(http.StatusBadRequest, errResponse.Error.Error()))
+		context.JSON(http.StatusBadRequest, response.BadRequest(errResponse.Error.Error()))
 		context.Abort()
 		return
 	}
