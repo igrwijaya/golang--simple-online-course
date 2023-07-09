@@ -1,9 +1,9 @@
 package response
 
 type Basic struct {
-	Code  uint
-	Error error
-	Data  interface{}
+	Code  uint        `json:"code,omitempty"`
+	Error error       `json:"error,omitempty"`
+	Data  interface{} `json:"data,omitempty"`
 }
 
 func Success() Basic {

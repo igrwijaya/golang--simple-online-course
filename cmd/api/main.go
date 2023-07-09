@@ -3,9 +3,15 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"golang-online-course/internal/delivery/http"
+	"golang-online-course/internal/usecase/admin/create_admin"
+	"golang-online-course/internal/usecase/admin/delete_admin"
+	"golang-online-course/internal/usecase/admin/get_admin"
+	"golang-online-course/internal/usecase/admin/read_admin"
+	"golang-online-course/internal/usecase/admin/update_admin"
 	"golang-online-course/internal/usecase/auth"
 	"golang-online-course/pkg/db"
 	"golang-online-course/pkg/entity"
+	"golang-online-course/pkg/entity/admin"
 	"golang-online-course/pkg/entity/forgot_password"
 	"golang-online-course/pkg/entity/oauth_access_token"
 	"golang-online-course/pkg/entity/oauth_client"
@@ -25,6 +31,7 @@ func main() {
 	oauthRefreshTokenRepo := oauth_refresh_token.NewRepository(appDb)
 	userRepo := user.NewRepository(appDb)
 	forgotPasswordRepo := forgot_password.NewRepository(appDb)
+	adminRepo := admin.NewRepository(appDb)
 
 	mailService := email_service.NewService()
 
@@ -36,9 +43,22 @@ func main() {
 		mailService,
 		forgotPasswordRepo)
 
-	authHandler := http.NewAuthHandler(authUseCase)
+	createAdminUseCase := create_admin.NewCreateAdminUseCase(adminRepo)
+	readAdminUseCase := read_admin.NewReadAdminUseCase(adminRepo)
+	updateAdminUseCase := update_admin.NewUpdateAdminUseCase(adminRepo)
+	deleteAdminUseCase := delete_admin.NewDeleteAdminUseCase(adminRepo)
+	getAdminUseCase := get_admin.NewGetAdminUseCase(adminRepo)
 
+	authHandler := http.NewAuthHandler(authUseCase)
 	authHandler.Route(&route.RouterGroup)
+
+	adminHandler := http.NewAdminHandler(
+		createAdminUseCase,
+		readAdminUseCase,
+		updateAdminUseCase,
+		deleteAdminUseCase,
+		getAdminUseCase)
+	adminHandler.Route(&route.RouterGroup)
 
 	errRun := route.Run()
 

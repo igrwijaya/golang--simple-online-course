@@ -11,3 +11,10 @@ func ErrorHttp(code uint, message string) ErrorApiResponse {
 		Message: message,
 	}
 }
+
+func BadRequest(message string) ErrorApiResponse {
+	return ErrorApiResponse{
+		Code:    400,
+		Message: message,
+	}
+}
