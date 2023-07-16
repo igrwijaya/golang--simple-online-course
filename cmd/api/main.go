@@ -6,6 +6,7 @@ import (
 	"golang-online-course/internal/usecase/admin/create_admin"
 	"golang-online-course/internal/usecase/admin/delete_admin"
 	"golang-online-course/internal/usecase/admin/get_admin"
+	"golang-online-course/internal/usecase/admin/login_admin"
 	"golang-online-course/internal/usecase/admin/read_admin"
 	"golang-online-course/internal/usecase/admin/update_admin"
 	"golang-online-course/internal/usecase/auth"
@@ -48,6 +49,11 @@ func main() {
 	updateAdminUseCase := update_admin.NewUpdateAdminUseCase(adminRepo)
 	deleteAdminUseCase := delete_admin.NewDeleteAdminUseCase(adminRepo)
 	getAdminUseCase := get_admin.NewGetAdminUseCase(adminRepo)
+	loginAdminUseCase := login_admin.NewUseCase(
+		adminRepo,
+		oauthClientRepo,
+		oauthAccessTokenRepo,
+		oauthRefreshTokenRepo)
 
 	authHandler := http.NewAuthHandler(authUseCase)
 	authHandler.Route(&route.RouterGroup)
@@ -57,7 +63,8 @@ func main() {
 		readAdminUseCase,
 		updateAdminUseCase,
 		deleteAdminUseCase,
-		getAdminUseCase)
+		getAdminUseCase,
+		loginAdminUseCase)
 	adminHandler.Route(&route.RouterGroup)
 
 	errRun := route.Run()

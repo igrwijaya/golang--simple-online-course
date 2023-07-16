@@ -5,6 +5,7 @@ import (
 	"golang-online-course/internal/usecase/admin/create_admin"
 	"golang-online-course/internal/usecase/admin/delete_admin"
 	"golang-online-course/internal/usecase/admin/get_admin"
+	"golang-online-course/internal/usecase/admin/login_admin"
 	"golang-online-course/internal/usecase/admin/read_admin"
 	"golang-online-course/internal/usecase/admin/update_admin"
 	"golang-online-course/pkg/response"
@@ -18,6 +19,7 @@ type AdminHandler struct {
 	UpdateAdminUseCase update_admin.UseCase
 	DeleteAdminUseCase delete_admin.UseCase
 	GetAdminUseCase    get_admin.UseCase
+	LoginAdminUseCase  login_admin.UseCase
 }
 
 func NewAdminHandler(
@@ -26,6 +28,7 @@ func NewAdminHandler(
 	updateAdminUseCase update_admin.UseCase,
 	deleteAdminUseCase delete_admin.UseCase,
 	getAdminUseCase get_admin.UseCase,
+	loginAdminUseCase login_admin.UseCase,
 ) *AdminHandler {
 	return &AdminHandler{
 		CreateAdminUseCase: createAdminUseCase,
@@ -33,6 +36,7 @@ func NewAdminHandler(
 		UpdateAdminUseCase: updateAdminUseCase,
 		DeleteAdminUseCase: deleteAdminUseCase,
 		GetAdminUseCase:    getAdminUseCase,
+		LoginAdminUseCase:  loginAdminUseCase,
 	}
 }
 
@@ -44,6 +48,8 @@ func (handler *AdminHandler) Route(route *gin.RouterGroup) {
 	apiRouter.PUT("/:id", handler.Update)
 	apiRouter.DELETE("/:id", handler.Delete)
 	apiRouter.GET("", handler.Get)
+
+	apiRouter.POST("/login", handler.Login)
 }
 
 func (handler *AdminHandler) Create(context *gin.Context) {
@@ -159,4 +165,26 @@ func (handler *AdminHandler) Get(context *gin.Context) {
 	}
 
 	context.JSON(http.StatusOK, getResponse)
+}
+
+func (handler *AdminHandler) Login(context *gin.Context) {
+	var loginRequest login_admin.LoginAdminRequest
+
+	errParsingJson := context.ShouldBindJSON(&loginRequest)
+
+	if errParsingJson != nil {
+		context.JSON(http.StatusBadRequest, response.BadRequest(errParsingJson.Error()))
+		context.Abort()
+		return
+	}
+
+	loginResponse, errLogin := handler.LoginAdminUseCase.Login(loginRequest)
+
+	if errLogin != nil {
+		context.JSON(http.StatusBadRequest, response.BadRequest(errLogin.Error.Error()))
+		context.Abort()
+		return
+	}
+
+	context.JSON(http.StatusOK, loginResponse)
 }

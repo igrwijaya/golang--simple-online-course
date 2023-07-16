@@ -78,41 +78,6 @@ func (useCase *authUseCase) Login(requestDto LoginRequest) (*LoginResponse, *res
 		}
 	}
 
-	expirationTime := time.Now().Add(time.Hour)
-
-	userClaims := jwt_utils.AppClaims{
-		Id:      existingUser.Id,
-		Name:    existingUser.Name,
-		Email:   existingUser.Email,
-		IsAdmin: false,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
-		},
-	}
-
-	accessToken := jwt_utils.CreateJwtToken(userClaims)
-
-	oauthAccessTokenEntity := oauth_access_token.OauthAccessToken{
-		OauthClientId: oauthClient.Id,
-		UserId:        existingUser.Id,
-		Token:         accessToken,
-		Scope:         "*",
-		ExpiredAt:     &expirationTime,
-	}
-
-	createOauthTokenResult := useCase.oauthAccessTokenRepository.Create(oauthAccessTokenEntity)
-
-	refreshTokenExpiredAt := expirationTime.Add(time.Minute * 5)
-
-	oauthRefreshTokenEntity := oauth_refresh_token.OauthRefreshToken{
-		OauthAccessTokenId: createOauthTokenResult,
-		UserId:             existingUser.Id,
-		Token:              utils.RandString(128),
-		ExpiredAt:          &refreshTokenExpiredAt,
-	}
-
-	useCase.oauthRefreshTokenRepository.Create(oauthRefreshTokenEntity)
-
 	authTokenResponse := useCase.generateAuthToken(existingUser)
 
 	return &authTokenResponse, nil
