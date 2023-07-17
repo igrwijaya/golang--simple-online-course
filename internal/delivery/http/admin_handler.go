@@ -152,7 +152,8 @@ func (handler *AdminHandler) Get(context *gin.Context) {
 		page = 1
 	}
 
-	if size <= 0 {
+	// apply -1 as unlimited
+	if size == 0 || size < -1 {
 		size = 10
 	}
 
